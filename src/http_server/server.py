@@ -55,7 +55,7 @@ class Request:
         size = self.headers.get("Content-Length")
         if not size:
             return None
-        return self.rfile.read(size)
+        return self.rfile.read(int(size))
 
 
 class Response:
