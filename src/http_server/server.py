@@ -1,12 +1,12 @@
-import sys
 import socket
+import sys
 import threading
-from email.parser import Parser
 from email.message import Message
+from email.parser import Parser
 from functools import lru_cache
+from io import BufferedReader
 from typing import Any
 from urllib.parse import parse_qs, urlparse
-from io import BufferedReader
 
 HOST = "localhost"
 PORT = 8080
@@ -59,9 +59,7 @@ class Request:
 
 
 class Response:
-    def __init__(
-        self, status: int, reason: str, headers: Any = None, body: Any = None
-    ) -> None:
+    def __init__(self, status: int, reason: str, headers: Any = None, body: Any = None) -> None:
         self.status = status
         self.reason = reason
         self.headers = headers
