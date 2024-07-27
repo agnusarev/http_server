@@ -1,5 +1,5 @@
+import logging
 import socket
-import sys
 import threading
 from email.message import Message
 from email.parser import Parser
@@ -59,7 +59,9 @@ class Request:
 
 
 class Response:
-    def __init__(self, status: int, reason: str, headers: Any = None, body: Any = None) -> None:
+    def __init__(
+        self, status: int, reason: str, headers: Any = None, body: Any = None
+    ) -> None:
         self.status = status
         self.reason = reason
         self.headers = headers
@@ -71,8 +73,11 @@ def handle_request(client_socket: socket.socket) -> None:
         req = parse_request(client_socket)
         resp = handle_method(req)
         send_response(client_socket, resp)
+        if client_socket:
+            req.rfile.close()
+            client_socket.close()
     except Exception as e:
-        print(e)
+        logging.exception(e)
     finally:
         client_socket.close()
 
@@ -87,11 +92,14 @@ def handle_method(req: "Request") -> "Response":
 
 def handle_get(req: "Request") -> "Response":
     accept = str(req.headers.get("Accept"))
+    logging.info(f"Accept: {accept}")
     if "text/html" in accept:
         contentType = "text/html; charset=utf-8"
         body = "<html><head></head><body>"
-        body += "<div>Пользователи (10)</div>"
+        body += "<div>Some response</div>"
         body += "</body></html>"
+    elif "application/json" in accept:
+        contentType = "application/json; charset=utf-8"
     else:
         return Response(406, "Not Acceptable")
 
@@ -102,8 +110,11 @@ def handle_get(req: "Request") -> "Response":
 
 def handle_head(req: "Request") -> "Response":
     accept = str(req.headers.get("Accept"))
+    logging.info(f"Accept: {accept}")
     if "text/html" in accept:
         contentType = "text/html; charset=utf-8"
+    elif "application/json" in accept:
+        contentType = "application/json; charset=utf-8"
     else:
         return Response(406, "Not Acceptable")
 
@@ -183,17 +194,23 @@ def start_server() -> None:
     server_address = (HOST, PORT)
     client_socket.bind((server_address))
     client_socket.listen()
+    logging.info(f"Starting server at {HOST}:{PORT}")
     while True:
         try:
             client_socket, _ = client_socket.accept()
-        except OSError:
-            pass
+        except OSError as e:
+            logging.exception(e)
         client_handler = threading.Thread(target=handle_request, args=(client_socket,))
         client_handler.start()
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="[%(asctime)s] %(levelname).1s %(message)s",
+        datefmt="%Y.%m.%d %H:%M:%S",
+    )
     try:
         start_server()
     except KeyboardInterrupt:
-        sys.exit(0)
+        pass
