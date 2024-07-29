@@ -9,7 +9,7 @@ from typing import Any
 from urllib.parse import parse_qs, urlparse
 
 HOST = "localhost"
-PORT = 8080
+PORT = 5431
 MAX_LINE = 64 * 1024
 MAX_HEADERS = 100
 
@@ -83,9 +83,9 @@ def handle_request(client_socket: socket.socket) -> None:
 
 
 def handle_method(req: "Request") -> "Response":
-    if req.path == "/" and req.method == "GET":
+    if req.method == "GET":
         return handle_get(req)
-    if req.path == "/" and req.method == "HEAD":
+    if req.method == "HEAD":
         return handle_head(req)
     raise HTTPError(404, "Not found")
 
@@ -147,7 +147,7 @@ def parse_request_line(rfile: BufferedReader) -> tuple:
         raise HTTPError(400, "Bad request", "Malformed request line")
 
     method, target, ver = words
-    if ver != "HTTP/1.1":
+    if ver != "HTTP/1.0":
         raise HTTPError(505, "HTTP Version Not Supported")
     return method, target, ver
 
@@ -196,11 +196,8 @@ def start_server() -> None:
     client_socket.listen()
     logging.info(f"Starting server at {HOST}:{PORT}")
     while True:
-        try:
-            client_socket, _ = client_socket.accept()
-        except OSError as e:
-            logging.exception(e)
-        client_handler = threading.Thread(target=handle_request, args=(client_socket,))
+        client, _ = client_socket.accept()
+        client_handler = threading.Thread(target=handle_request, args=(client,))
         client_handler.start()
 
 
